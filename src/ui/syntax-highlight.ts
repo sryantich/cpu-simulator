@@ -445,7 +445,7 @@ export function createHighlightedEditor(opts: {
 
     // Build highlighted HTML
     const html = tokenLines.map(lineTokens => {
-      if (lineTokens.length === 0) return '\n';
+      if (lineTokens.length === 0) return '';
       return lineTokens.map(t => {
         const escaped = escapeHtml(t.text);
         if (t.type === 'plain') return escaped;

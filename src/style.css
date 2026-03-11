@@ -1821,7 +1821,7 @@ pre, code, textarea, .code-editor, .terminal-output, .kernel-log,
     max-height: none;
   }
   .editor-section .code-editor,
-  .editor-section .he-container {
+  .editor-section .highlighted-editor {
     min-height: 200px;
     max-height: 50vh;
   }
@@ -1934,7 +1934,7 @@ pre, code, textarea, .code-editor, .terminal-output, .kernel-log,
     min-height: 250px;
   }
   .editor-section .code-editor,
-  .editor-section .he-container {
+  .editor-section .highlighted-editor {
     min-height: 180px;
     max-height: 45vh;
   }
@@ -2113,7 +2113,7 @@ pre, code, textarea, .code-editor, .terminal-output, .kernel-log,
 
   /* Editor section: constrain inner scroll areas */
   .editor-section .code-editor,
-  .editor-section .he-container {
+  .editor-section .highlighted-editor {
     min-height: 150px;
     max-height: 40vh;
   }
