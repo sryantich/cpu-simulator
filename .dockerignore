@@ -1,0 +1,8 @@
+node_modules
+dist
+.git
+*.png
+*.jpeg
+*.md
+opencode.json
+.gitignore

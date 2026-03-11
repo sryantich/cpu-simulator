@@ -1,0 +1,22 @@
+services:
+  # Development: Vite dev server with hot reload
+  dev:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install && npx vite --host 0.0.0.0"
+
+  # Production: nginx serving built assets
+  prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+
+volumes:
+  node_modules:
