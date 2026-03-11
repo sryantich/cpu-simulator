@@ -3,7 +3,7 @@
  */
 
 import type { Simulator } from '../../core/simulator.ts';
-import { el, hex, bin } from '../helpers.ts';
+import { el, hex } from '../helpers.ts';
 import { REG_NAMES, OPCODE_NAMES } from '../../core/isa.ts';
 import { PIPELINE_STAGE_NAMES } from '../../core/cpu.ts';
 import { tooltip } from '../tooltip.ts';
@@ -40,8 +40,17 @@ const FLAG_TIPS: Record<string, string> = {
 const PIPE_TIPS: Record<string, string> = {
   Fetch: 'Fetch — Reads the next instruction word from memory at PC',
   Decode: 'Decode — Interprets opcode, reads registers, resolves operands',
-  Execute: 'Execute — Performs the ALU operation or memory access',
+  Execute: 'Execute — Performs the ALU operation or computes memory address',
+  Memory: 'Memory — Reads from or writes to data memory (LDR/STR)',
+  Writeback: 'Writeback — Writes the result back to the destination register',
 };
+
+/** Format CPSR as grouped 4-bit nibbles for readability */
+function formatCPSR(cpsr: number): string {
+  const b = ((cpsr >>> 0).toString(2)).padStart(32, '0');
+  // Split into 8 nibbles: NZCV | rsvd | rsvd | rsvd | rsvd | IF_T | mode_hi | mode_lo
+  return b.replace(/(.{4})/g, '$1 ').trim();
+}
 
 export function createCPUTab(sim: Simulator): { element: HTMLElement; update: () => void } {
   const container = el('div', { className: 'tab-content cpu-tab' });
@@ -157,7 +166,7 @@ export function createCPUTab(sim: Simulator): { element: HTMLElement; update: ()
       ['PC', hex(snapshot.pc, 4)],
       ['SP', hex(snapshot.sp, 4)],
       ['LR', hex(snapshot.lr, 4)],
-      ['CPSR', bin(snapshot.cpsr)],
+      ['CPSR', formatCPSR(snapshot.cpsr)],
     ];
     for (const [label, value] of statusItems) {
       statusInfo.appendChild(el('div', {

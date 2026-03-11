@@ -12,30 +12,65 @@ export function createIOTab(sim: Simulator): { element: HTMLElement; update: () 
   // UART section
   const uartSection = el('div', { className: 'section io-device' });
   uartSection.appendChild(el('h3', { text: 'UART (Serial)', className: 'section-title' }));
+  uartSection.appendChild(el('div', { className: 'io-description', children: [
+    'Serial port backing the Terminal tab. Programs write characters via ',
+    el('code', { text: 'SWI #11' }),
+    ' (putchar) or MMIO writes to ',
+    el('code', { text: hex(MMIO.UART_BASE, 4) }),
+    '. Supports TX (output) and RX (input) buffers.',
+  ] }));
   const uartStatus = el('div', { className: 'io-status', id: 'uart-status' });
   uartSection.appendChild(uartStatus);
 
   // Timer section
   const timerSection = el('div', { className: 'section io-device' });
   timerSection.appendChild(el('h3', { text: 'Timer', className: 'section-title' }));
+  timerSection.appendChild(el('div', { className: 'io-description', children: [
+    'Hardware timer that counts up and fires ',
+    el('code', { text: 'IRQ_TIMER' }),
+    ' when count reaches the compare value. Supports auto-reload for periodic interrupts. Configure via MMIO at ',
+    el('code', { text: hex(MMIO.TIMER_BASE, 4) }),
+    '.',
+  ] }));
   const timerStatus = el('div', { className: 'io-status', id: 'timer-status' });
   timerSection.appendChild(timerStatus);
 
   // IRQ Controller section
   const irqSection = el('div', { className: 'section io-device' });
   irqSection.appendChild(el('h3', { text: 'Interrupt Controller', className: 'section-title' }));
+  irqSection.appendChild(el('div', { className: 'io-description', children: [
+    'Manages hardware interrupts. Each IRQ line can be enabled/disabled via the enable mask at ',
+    el('code', { text: hex(MMIO.IRQ_BASE, 4) }),
+    '. Available IRQs: Timer, UART RX/TX, Storage, Keyboard.',
+  ] }));
   const irqStatus = el('div', { className: 'io-status', id: 'irq-status' });
   irqSection.appendChild(irqStatus);
 
   // Display section
   const displaySection = el('div', { className: 'section io-device' });
   displaySection.appendChild(el('h3', { text: 'Display (Text Mode)', className: 'section-title' }));
+  displaySection.appendChild(el('div', { className: 'io-description', children: [
+    'Memory-mapped 40\u00d720 character framebuffer (like VGA text RAM). Write characters directly to MMIO at ',
+    el('code', { text: hex(MMIO.DISPLAY_BASE, 4) }),
+    '\u2013',
+    el('code', { text: hex(MMIO.DISPLAY_BASE + 40 * 20 - 1, 4) }),
+    '. Enable via ',
+    el('code', { text: 'SWI #10' }),
+    ' (open_display). This is separate from the Terminal\u2019s serial stream.',
+  ] }));
   const displayView = el('pre', { className: 'display-view', id: 'display-view' });
   displaySection.appendChild(displayView);
 
   // Storage section
   const storageSection = el('div', { className: 'section io-device' });
   storageSection.appendChild(el('h3', { text: 'Storage (4MB)', className: 'section-title' }));
+  storageSection.appendChild(el('div', { className: 'io-description', children: [
+    'Block-based persistent storage. Read/write 512-byte blocks via ',
+    el('code', { text: 'SWI #20' }),
+    ' / ',
+    el('code', { text: 'SWI #21' }),
+    ' (storage_read / storage_write). Data transfers through a DMA buffer in memory.',
+  ] }));
   const storageStatus = el('div', { className: 'io-status', id: 'storage-status' });
   storageSection.appendChild(storageStatus);
 
@@ -53,16 +88,40 @@ export function createIOTab(sim: Simulator): { element: HTMLElement; update: () 
   container.appendChild(busSection);
 
   // Track bus events
-  const busEvents: { type: string; detail: string; cycle: number }[] = [];
+  let busEvents: { type: string; detail: string; cycle: number }[] = [];
   const busEventTypes = ['mmio:read', 'mmio:write', 'irq:raise', 'irq:ack', 'storage:read_start', 'storage:write_start', 'storage:complete'];
 
   for (const type of busEventTypes) {
     sim.bus.on(type, (data) => {
-      const detail = JSON.stringify(data).substring(0, 60);
+      const d = data as Record<string, unknown>;
+      // Format bus event details with hex addresses and readable values
+      let detail: string;
+      if (type === 'mmio:read' || type === 'mmio:write') {
+        const addr = typeof d.address === 'number' ? hex(d.address, 4) : String(d.address);
+        const val = typeof d.value === 'number' ? hex(d.value, 4) : String(d.value ?? '');
+        const parts = [addr];
+        if (val) parts.push(`= ${val}`);
+        // Show ASCII char if it's a printable byte
+        if (typeof d.value === 'number' && d.value >= 32 && d.value < 127) {
+          parts.push(`'${String.fromCharCode(d.value)}'`);
+        }
+        detail = parts.join(' ');
+      } else if (type === 'irq:raise' || type === 'irq:ack') {
+        const irqNum = typeof d.irq === 'number' ? d.irq : d.number;
+        detail = `IRQ ${irqNum}`;
+      } else {
+        const block = typeof d.block === 'number' ? `block ${d.block}` : '';
+        detail = block || JSON.stringify(d).substring(0, 50);
+      }
       busEvents.push({ type, detail, cycle: sim.cpu.getCycle() });
       if (busEvents.length > 50) busEvents.shift();
     });
   }
+
+  // Clear bus events on reset
+  sim.bus.on('sim:reset', () => {
+    busEvents = [];
+  });
 
   const IRQ_NAMES: Record<number, string> = {
     [IRQ.RESET]: 'RESET', [IRQ.UNDEFINED]: 'UNDEF', [IRQ.SWI]: 'SWI',
@@ -81,7 +140,7 @@ export function createIOTab(sim: Simulator): { element: HTMLElement; update: () 
       el('span', { className: uartHasData ? 'io-active' : 'io-inactive', text: uartHasData ? 'DATA READY' : 'empty' }),
     ]}));
     uartStatus.appendChild(el('div', { className: 'io-field', children: [
-      el('span', { text: `Address: ${hex(MMIO.UART_BASE, 4)} - ${hex(MMIO.UART_CONTROL, 4)}` }),
+      el('span', { text: `TX → Terminal tab  |  Address: ${hex(MMIO.UART_BASE, 4)} – ${hex(MMIO.UART_CONTROL, 4)}` }),
     ]}));
 
     // Timer status
@@ -131,18 +190,21 @@ export function createIOTab(sim: Simulator): { element: HTMLElement; update: () 
       displayView.textContent = text;
       displayView.className = 'display-view display-active';
     } else {
-      displayView.textContent = '(display disabled)';
+      displayView.textContent = '(display disabled — use SWI #10 to enable)';
       displayView.className = 'display-view display-inactive';
     }
 
     // Storage
     storageStatus.innerHTML = '';
     storageStatus.appendChild(el('div', { className: 'io-field', children: [
-      el('span', { text: `Total: ${sim.storage.totalBlocks} blocks (${(sim.config.storageSize / 1024 / 1024).toFixed(1)} MB)` }),
+      el('span', { text: `Total: ${sim.storage.totalBlocks} blocks \u00d7 512B = ${(sim.config.storageSize / 1024 / 1024).toFixed(1)} MB` }),
     ]}));
 
     // Bus log
     busLog.innerHTML = '';
+    if (busEvents.length === 0) {
+      busLog.appendChild(el('div', { className: 'empty-state', text: '(no bus activity yet — run a program to see MMIO reads/writes and interrupts)' }));
+    }
     for (const evt of busEvents.slice(-15).reverse()) {
       busLog.appendChild(el('div', {
         className: 'bus-event',

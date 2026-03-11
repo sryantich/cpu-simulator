@@ -19,7 +19,7 @@
  *   7: fork()                     - fork process (simplified)
  *   8: exec(addr)                 - execute program at address
  *  10: open_display()             - enable display
- *  11: put_char(ch)               - write char to display
+ *  11: put_char(ch)               - write char to UART (serial terminal)
  *  12: get_time()                 - get timer count
  *  20: storage_read(block)        - read storage block into DMA buf
  *  21: storage_write(block)       - write DMA buf to storage block

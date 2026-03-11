@@ -176,6 +176,14 @@
 [data-theme="light"] .terminal-input::placeholder {
   color: #4a5568;
 }
+[data-theme="light"] .terminal-tab .tab-description {
+  background: #252536;
+  border-bottom-color: #363648;
+  color: #8a9aaa;
+}
+[data-theme="light"] .terminal-empty {
+  color: #4a7a5a;
+}
 
 /* Light theme: syntax highlight tokens — darker shades for white bg */
 [data-theme="light"] .ht-instruction  { color: #0550ae; }
@@ -666,6 +674,42 @@ pre, code, textarea, .code-editor, .terminal-output, .kernel-log,
 }
 .terminal-input::placeholder {
   color: #1a3a1a;
+}
+
+.terminal-empty {
+  color: #1a5a1a;
+  font-style: italic;
+}
+
+/* ── Tab / I/O description banners ──────────────────────────────── */
+
+.tab-description {
+  padding: 8px 12px;
+  font-size: var(--font-xs);
+  line-height: 1.5;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+.tab-description code {
+  color: var(--accent-cyan);
+  font-size: var(--font-xs);
+}
+.terminal-tab .tab-description {
+  background: #0a0a0a;
+  border-bottom-color: #1a1a1a;
+  color: #6a9a6a;
+}
+
+.io-description {
+  font-size: var(--font-xs);
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.io-description code {
+  color: var(--accent-cyan);
+  font-size: var(--font-xs);
 }
 
 /* ================================================================

@@ -6,10 +6,19 @@ import type { Simulator } from '../../core/simulator.ts';
 import { el } from '../helpers.ts';
 
 export function createTerminalTab(sim: Simulator): { element: HTMLElement; update: () => void } {
-  const outputLines: string[] = [];
+  let outputLines: string[] = [];
   let currentLine = '';
 
   const container = el('div', { className: 'tab-content terminal-tab' });
+
+  // Description header
+  const desc = el('div', { className: 'tab-description', children: [
+    'UART Serial Console — sequential character output from your program via ',
+    el('code', { text: 'SWI #11' }),
+    ' (putchar). This is a serial stream, not a framebuffer. ',
+    'For 2D random-access display, see the Display device in the I/O Bus tab.',
+  ] });
+  container.appendChild(desc);
 
   const output = el('pre', {
     className: 'terminal-output',
@@ -49,6 +58,13 @@ export function createTerminalTab(sim: Simulator): { element: HTMLElement; updat
     update();
   });
 
+  // Clear terminal on reset
+  sim.bus.on('sim:reset', () => {
+    outputLines = [];
+    currentLine = '';
+    update();
+  });
+
   // Handle keyboard input -> UART
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
@@ -64,7 +80,13 @@ export function createTerminalTab(sim: Simulator): { element: HTMLElement; updat
 
   function update() {
     const text = outputLines.join('\n') + (currentLine ? '\n' + currentLine : '');
-    output.textContent = text || '(no output yet)';
+    if (text) {
+      output.textContent = text;
+      output.className = 'terminal-output';
+    } else {
+      output.textContent = 'No output yet. Run a program that uses SWI #11 (putchar) to see output here.';
+      output.className = 'terminal-output terminal-empty';
+    }
     output.scrollTop = output.scrollHeight;
   }
 

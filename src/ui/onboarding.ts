@@ -22,7 +22,7 @@ interface TourStep {
 const TOUR_STEPS: TourStep[] = [
   {
     title: 'Welcome to CPU Simulator',
-    body: 'This is an interactive ARM-like 32-bit CPU simulator with 32KB RAM, a 3-stage pipeline, and 5 peripheral devices.\n\nYou can write assembly or C code, step through execution, and watch the CPU state change in real time.',
+    body: 'This is an interactive ARM-like 32-bit CPU simulator with 32KB RAM, a 5-stage pipeline, and 5 peripheral devices.\n\nYou can write assembly or C code, step through execution, and watch the CPU state change in real time.',
   },
   {
     title: 'Code Editor',
@@ -36,7 +36,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     title: 'CPU State & Pipeline',
-    body: 'Switch to the CPU State tab to see all 16 registers, CPSR flags (N, Z, C, V), and the 3-stage pipeline (Fetch, Decode, Execute).\n\nRegisters that change are highlighted. Hover over any element for details.',
+    body: 'Switch to the CPU State tab to see all 16 registers, CPSR flags (N, Z, C, V), and the 5-stage pipeline (Fetch, Decode, Execute, Memory, Writeback).\n\nRegisters that change are highlighted. Hover over any element for details.',
     highlight: '[data-tab="cpu"]',
   },
   {

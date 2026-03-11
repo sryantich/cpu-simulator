@@ -33,12 +33,17 @@ export function createKernelTab(sim: Simulator): { element: HTMLElement; update:
   container.appendChild(logSection);
   container.appendChild(syscallSection);
 
-  const syscallHistory: { number: number; r0: number; r1: number; r2: number; cycle: number }[] = [];
+  let syscallHistory: { number: number; r0: number; r1: number; r2: number; cycle: number }[] = [];
 
   sim.bus.on('kernel:syscall', (data) => {
     const d = data as { number: number; r0: number; r1: number; r2: number };
     syscallHistory.push({ ...d, cycle: sim.cpu.getCycle() });
     if (syscallHistory.length > 100) syscallHistory.shift();
+  });
+
+  // Clear syscall history on reset
+  sim.bus.on('sim:reset', () => {
+    syscallHistory = [];
   });
 
   const SYSCALL_NAMES: Record<number, string> = {
@@ -54,7 +59,7 @@ export function createKernelTab(sim: Simulator): { element: HTMLElement; update:
     procList.innerHTML = '';
 
     if (processes.length === 0) {
-      procList.appendChild(el('div', { className: 'empty-state', text: '(no processes)' }));
+      procList.appendChild(el('div', { className: 'empty-state', text: '(no processes — boot the kernel first)' }));
     }
 
     for (const proc of processes) {
@@ -82,6 +87,9 @@ export function createKernelTab(sim: Simulator): { element: HTMLElement; update:
 
     // Syscall history
     syscallList.innerHTML = '';
+    if (syscallHistory.length === 0) {
+      syscallList.appendChild(el('div', { className: 'empty-state', text: '(no syscalls yet)' }));
+    }
     for (const sc of syscallHistory.slice(-20).reverse()) {
       const name = SYSCALL_NAMES[sc.number] || `syscall_${sc.number}`;
       syscallList.appendChild(el('div', {
