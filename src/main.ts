@@ -23,6 +23,9 @@ const sim = new Simulator({
   clockSpeedHz: 4,
 });
 
+// Expose simulator for testing/debugging from browser console & Playwright
+(window as unknown as Record<string, unknown>).__sim = sim;
+
 // ── Theme Toggle ─────────────────────────────────────────────────
 
 function getStoredTheme(): 'dark' | 'light' {
@@ -105,8 +108,8 @@ const speedSlider = document.createElement('input');
 speedSlider.type = 'range';
 speedSlider.className = 'speed-slider';
 speedSlider.min = '0.5';
-speedSlider.max = '100';
-speedSlider.step = '0.5';
+speedSlider.max = '1000';
+speedSlider.step = '1';
 speedSlider.value = sim.getSpeed().toString();
 speedSlider.addEventListener('input', () => {
   const val = parseFloat(speedSlider.value);

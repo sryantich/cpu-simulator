@@ -1190,6 +1190,218 @@ pre, code, textarea, .code-editor, .terminal-output, .kernel-log,
   background: rgba(248, 81, 73, 0.05);
 }
 
+/* ── C↔ASM Side-by-Side View ─────────────────────────────────── */
+
+.casm-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 50%;
+  min-height: 200px;
+  overflow: hidden;
+}
+
+/* When casm-container is visible, shrink the editor */
+.casm-container ~ .highlighted-editor,
+.editor-section .casm-container[style*="flex"] ~ .highlighted-editor {
+  /* handled via JS class toggle instead */
+}
+
+/* Shrink editor when C↔ASM view is active */
+.editor-section.casm-active .highlighted-editor {
+  flex: 0 0 140px;
+  min-height: 100px;
+  max-height: 200px;
+}
+.editor-section.casm-active .example-info {
+  display: none !important;
+}
+
+.casm-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  border-top: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.casm-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.casm-header-left,
+.casm-header-right {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.casm-header-right {
+  justify-content: flex-start;
+}
+.casm-header-arrow {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+.casm-label {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.casm-direction-hint {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.casm-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.casm-panel {
+  flex: 1;
+  overflow: auto;
+  padding: 4px 0;
+  font-family: var(--mono);
+  font-size: var(--font-xs);
+  line-height: 1.55;
+  min-width: 0;
+}
+.casm-c-panel {
+  background: var(--bg-inset);
+  border-right: 1px solid var(--border);
+}
+.casm-asm-panel {
+  background: var(--bg-base);
+}
+
+.casm-line {
+  display: flex;
+  align-items: flex-start;
+  padding: 0 8px;
+  min-height: 1.55em;
+  cursor: default;
+  transition: background-color 0.1s ease;
+  border-left: 2px solid transparent;
+}
+.casm-line:hover {
+  background: var(--bg-hover);
+}
+.casm-line.casm-unmapped {
+  opacity: 0.55;
+}
+.casm-line.casm-mapped {
+  opacity: 1;
+}
+
+/* Highlighted state (hover-linked) */
+.casm-line.casm-highlight {
+  background: rgba(88, 166, 255, 0.1) !important;
+  border-left-color: var(--accent-blue);
+  opacity: 1 !important;
+}
+
+.casm-linenum {
+  color: var(--text-muted);
+  min-width: 2.5em;
+  text-align: right;
+  padding-right: 8px;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.casm-code {
+  flex: 1;
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.casm-annotation {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  padding-left: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
+  font-style: italic;
+  margin-left: auto;
+}
+
+/* Category color accents — left border on ASM lines */
+.casm-line.cat-prologue  { border-left-color: var(--accent-purple); }
+.casm-line.cat-epilogue  { border-left-color: var(--accent-purple); }
+.casm-line.cat-vardecl   { border-left-color: var(--accent-cyan); }
+.casm-line.cat-assign    { border-left-color: var(--accent-blue); }
+.casm-line.cat-condition { border-left-color: var(--accent-orange); }
+.casm-line.cat-loop      { border-left-color: var(--accent-yellow); }
+.casm-line.cat-call      { border-left-color: var(--accent-green); }
+.casm-line.cat-return    { border-left-color: var(--accent-red); }
+.casm-line.cat-branch    { border-left-color: var(--accent-orange); }
+.casm-line.cat-runtime   { border-left-color: var(--accent-pink); }
+.casm-line.cat-data      { border-left-color: var(--accent-cyan); }
+.casm-line.cat-infra     { border-left-color: var(--text-muted); }
+
+/* Highlighted state preserves category border except on C panel */
+.casm-c-panel .casm-line.casm-highlight {
+  border-left-color: var(--accent-blue);
+}
+
+/* Annotation text uses category colors */
+.casm-annotation.cat-prologue  { color: var(--accent-purple); }
+.casm-annotation.cat-epilogue  { color: var(--accent-purple); }
+.casm-annotation.cat-vardecl   { color: var(--accent-cyan); }
+.casm-annotation.cat-assign    { color: var(--accent-blue); }
+.casm-annotation.cat-condition { color: var(--accent-orange); }
+.casm-annotation.cat-loop      { color: var(--accent-yellow); }
+.casm-annotation.cat-call      { color: var(--accent-green); }
+.casm-annotation.cat-return    { color: var(--accent-red); }
+.casm-annotation.cat-branch    { color: var(--accent-orange); }
+.casm-annotation.cat-runtime   { color: var(--accent-pink); }
+.casm-annotation.cat-data      { color: var(--accent-cyan); }
+.casm-annotation.cat-infra     { color: var(--text-muted); }
+
+/* ── C↔ASM Light theme overrides ─────────────────────────────── */
+[data-theme="light"] .casm-header {
+  background: #f0f3f6;
+  border-bottom-color: #d0d7de;
+}
+[data-theme="light"] .casm-c-panel {
+  background: #f6f8fa;
+}
+[data-theme="light"] .casm-asm-panel {
+  background: #ffffff;
+}
+[data-theme="light"] .casm-line.casm-highlight {
+  background: rgba(9, 105, 218, 0.12) !important;
+}
+[data-theme="light"] .casm-line:hover {
+  background: #eaeef2;
+}
+[data-theme="light"] .casm-line {
+  border-left-width: 3px;
+}
+[data-theme="light"] .casm-annotation {
+  color: #57606a;
+}
+
 /* ── Disassembly ──────────────────────────────────────────────── */
 
 .disasm-section {
@@ -2179,6 +2391,21 @@ pre, code, textarea, .code-editor, .terminal-output, .kernel-log,
     right: 20px;
     justify-content: center;
   }
+
+  /* C↔ASM view: stack panels vertically */
+  .casm-body {
+    flex-direction: column;
+  }
+  .casm-panel {
+    max-height: 35vh;
+    border-right: none !important;
+  }
+  .casm-c-panel {
+    border-bottom: 1px solid var(--border);
+  }
+  .casm-annotation {
+    font-size: 0.6rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -2352,6 +2579,24 @@ pre, code, textarea, .code-editor, .terminal-output, .kernel-log,
     right: 10px;
     padding: 8px 12px;
     font-size: var(--font-sm);
+  }
+
+  /* C↔ASM view: hide annotations, compact lines */
+  .casm-annotation {
+    display: none;
+  }
+  .casm-header span:last-child {
+    display: none;
+  }
+  .casm-panel {
+    max-height: 30vh;
+  }
+  .casm-line {
+    padding: 1px 4px 1px 2px;
+  }
+  .casm-linenum {
+    min-width: 22px;
+    padding-right: 4px;
   }
 }
 

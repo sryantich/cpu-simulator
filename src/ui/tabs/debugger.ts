@@ -10,6 +10,7 @@ import { createHighlightedEditor } from '../syntax-highlight.ts';
 import { loadProfile, awardExampleXP } from '../../learning/progress.ts';
 import { showXPNotification } from '../xp-notification.ts';
 import { createSplitter } from '../splitter.ts';
+import { createCasmView, type CasmView } from '../casm-view.ts';
 
 export function createDebuggerTab(sim: Simulator): { element: HTMLElement; update: () => void } {
   const container = el('div', { className: 'tab-content debugger-tab' });
@@ -80,6 +81,10 @@ export function createDebuggerTab(sim: Simulator): { element: HTMLElement; updat
       }
       codeEditor.setLanguage(example.language as 'asm' | 'tinyc');
       codeEditor.refresh();
+      // Clean up C↔ASM view when switching to a non-TinyC example
+      if (example.language !== 'tinyc') {
+        destroyCasmView();
+      }
       // Show info panel
       const diffLabel = example.difficulty.charAt(0).toUpperCase() + example.difficulty.slice(1);
       exampleInfo.innerHTML = '';
@@ -112,6 +117,10 @@ export function createDebuggerTab(sim: Simulator): { element: HTMLElement; updat
   if (langSelectEl) {
     langSelectEl.addEventListener('change', () => {
       codeEditor.setLanguage(langSelectEl.value as 'asm' | 'tinyc');
+      // Clean up C↔ASM view when switching away from TinyC
+      if (langSelectEl.value !== 'tinyc') {
+        destroyCasmView();
+      }
     });
   }
 
@@ -119,15 +128,44 @@ export function createDebuggerTab(sim: Simulator): { element: HTMLElement; updat
   const assembleBtn = el('button', { className: 'btn btn-primary', text: 'Assemble & Load' });
   const asmOutputDisplay = el('pre', { className: 'asm-output', id: 'asm-output', text: '' });
 
+  // Track the current C↔ASM view instance
+  let activeCasmView: CasmView | null = null;
+  const casmContainer = el('div', { className: 'casm-container' });
+  casmContainer.style.display = 'none';
+
+  function destroyCasmView() {
+    if (activeCasmView) {
+      activeCasmView.destroy();
+      activeCasmView = null;
+    }
+    casmContainer.innerHTML = '';
+    casmContainer.style.display = 'none';
+    editorSection.classList.remove('casm-active');
+  }
+
   assembleBtn.addEventListener('click', () => {
     const lang = (document.getElementById('lang-select') as HTMLSelectElement)?.value || 'asm';
     const source = editor.value;
 
+    // Always clean up the old C↔ASM view
+    destroyCasmView();
+
     if (lang === 'tinyc') {
       const result = sim.compileAndLoad(source);
       if (result.success) {
-        asmOutputDisplay.textContent = `Compiled successfully!\n\nGenerated Assembly:\n${result.assembly}\n\nListing:\n${result.assemblerResult?.listing || ''}`;
+        // Show brief status in the output bar
+        asmOutputDisplay.textContent = `Compiled successfully! ${result.assemblerResult?.binary.length || 0} bytes`;
         asmOutputDisplay.className = 'asm-output success';
+
+        // Show interactive C↔ASM view
+        activeCasmView = createCasmView({
+          cSource: source,
+          asmSource: result.assembly,
+          sourceMap: result.sourceMap,
+        });
+        casmContainer.appendChild(activeCasmView.element);
+        casmContainer.style.display = 'flex';
+        editorSection.classList.add('casm-active');
       } else {
         asmOutputDisplay.textContent = `Errors:\n${result.errors.join('\n')}`;
         asmOutputDisplay.className = 'asm-output error';
@@ -150,6 +188,7 @@ export function createDebuggerTab(sim: Simulator): { element: HTMLElement; updat
   editorSection.appendChild(codeEditor.wrapper);
   editorSection.appendChild(editorButtons);
   editorSection.appendChild(asmOutputDisplay);
+  editorSection.appendChild(casmContainer);
 
   // Bottom: Disassembly view
   const disasmSection = el('div', { className: 'section disasm-section' });

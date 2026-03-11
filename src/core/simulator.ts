@@ -93,6 +93,17 @@ export class Simulator {
     this.scheduleNextTick();
   }
 
+  /** Run N steps synchronously (for fast testing / batch execution).
+   *  Returns the number of steps actually executed (may be < n if CPU halts). */
+  runBatch(n: number): number {
+    let executed = 0;
+    for (let i = 0; i < n; i++) {
+      if (!this.step()) break;
+      executed++;
+    }
+    return executed;
+  }
+
   /** Stop execution */
   stop(): void {
     this.running = false;
