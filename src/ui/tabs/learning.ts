@@ -11,6 +11,7 @@ import { el } from '../helpers.ts';
 import { CPUState } from '../../core/cpu.ts';
 import { createHighlightedEditor } from '../syntax-highlight.ts';
 import { showXPNotification } from '../xp-notification.ts';
+import { createSplitter } from '../splitter.ts';
 import {
   TUTORIALS,
   createProgress,
@@ -984,8 +985,17 @@ export function createLearningTab(sim: Simulator): { element: HTMLElement; updat
 
   // ── Assembly & initialization ──────────────────────────────────
 
-  container.appendChild(sidebar);
-  container.appendChild(contentArea);
+  const splitter = createSplitter({
+    id: 'learn-main',
+    direction: 'horizontal',
+    defaultSize: 22,
+    minFirst: 160,
+    minSecond: 300,
+    first: sidebar,
+    second: contentArea,
+  });
+
+  container.appendChild(splitter);
 
   buildSidebar();
   renderContent();

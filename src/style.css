@@ -866,24 +866,130 @@ pre, code, textarea, .code-editor, .terminal-output, .kernel-log,
 }
 
 /* ================================================================
+   SPLITTER — Resizable Split Panes
+   ================================================================ */
+
+.splitter {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.splitter-h {
+  flex-direction: row;
+}
+
+.splitter-v {
+  flex-direction: column;
+}
+
+.splitter-pane {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Make pane children fill the pane */
+.splitter-pane > * {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+.splitter-handle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  position: relative;
+  touch-action: none;
+}
+
+.splitter-h > .splitter-handle {
+  width: 8px;
+  cursor: col-resize;
+  margin: 0 -2px;
+}
+
+.splitter-v > .splitter-handle {
+  height: 8px;
+  cursor: row-resize;
+  margin: -2px 0;
+}
+
+/* 1px divider line spanning the full handle length */
+.splitter-h > .splitter-handle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: var(--border);
+  transition: background 0.15s;
+}
+
+.splitter-v > .splitter-handle::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--border);
+  transition: background 0.15s;
+}
+
+.splitter-handle:hover::before,
+.splitter-handle.active::before {
+  background: var(--accent-blue);
+}
+
+.splitter-handle-bar {
+  border-radius: 2px;
+  background: #484f58;
+  transition: background 0.15s;
+  z-index: 1;
+}
+
+[data-theme="light"] .splitter-handle-bar {
+  background: #afb8c1;
+}
+
+.splitter-h .splitter-handle-bar {
+  width: 3px;
+  height: 40px;
+}
+
+.splitter-v .splitter-handle-bar {
+  height: 3px;
+  width: 40px;
+}
+
+.splitter-handle:hover .splitter-handle-bar,
+.splitter-handle.active .splitter-handle-bar {
+  background: var(--accent-blue);
+}
+
+/* ================================================================
    DEBUGGER TAB
    ================================================================ */
 
 .debugger-tab {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr auto;
-  gap: 16px;
   height: 100%;
+  padding: 0;
 }
 
 .editor-section {
-  grid-column: 1;
-  grid-row: 1 / -1;
   display: flex;
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+  height: 100%;
 }
 
 .editor-controls {
@@ -1087,11 +1193,10 @@ pre, code, textarea, .code-editor, .terminal-output, .kernel-log,
 /* ── Disassembly ──────────────────────────────────────────────── */
 
 .disasm-section {
-  grid-column: 2;
-  grid-row: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  flex: 1;
 }
 
 .disasm-view {
@@ -1166,9 +1271,15 @@ pre, code, textarea, .code-editor, .terminal-output, .kernel-log,
 
 /* ── Breakpoints ──────────────────────────────────────────────── */
 
+.debugger-right {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
 .bp-section {
-  grid-column: 2;
-  grid-row: 2;
+  flex-shrink: 0;
 }
 
 .bp-input-row {
@@ -1807,16 +1918,26 @@ pre, code, textarea, .code-editor, .terminal-output, .kernel-log,
     font-size: var(--font-sm);
   }
 
-  /* Debugger: stack editor and disassembly vertically, scrollable */
-  .debugger-tab {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
-    gap: 10px;
-    height: auto;
+  /* Debugger: stack vertically on tablet */
+  .debugger-tab .splitter-h {
+    flex-direction: column;
+  }
+  .debugger-tab .splitter-h > .splitter-handle {
+    width: 100%;
+    height: 8px;
+    cursor: row-resize;
+    margin: -2px 0;
+  }
+  .debugger-tab .splitter-h .splitter-handle-bar {
+    width: 40px;
+    height: 3px;
+  }
+  .debugger-tab .splitter-first,
+  .debugger-tab .splitter-second {
+    width: 100% !important;
+    height: auto !important;
   }
   .editor-section {
-    grid-column: 1;
-    grid-row: 1;
     min-height: 300px;
     max-height: none;
   }
@@ -1826,17 +1947,35 @@ pre, code, textarea, .code-editor, .terminal-output, .kernel-log,
     max-height: 50vh;
   }
   .disasm-section {
-    grid-column: 1;
-    grid-row: 2;
     min-height: 200px;
     max-height: none;
   }
   .disasm-view {
     max-height: 35vh;
   }
-  .bp-section {
-    grid-column: 1;
-    grid-row: 3;
+
+  /* Learn: stack sidebar on top on tablet */
+  .learn-tab .splitter-h {
+    flex-direction: column;
+  }
+  .learn-tab .splitter-h > .splitter-handle {
+    width: 100%;
+    height: 8px;
+    cursor: row-resize;
+    margin: -2px 0;
+  }
+  .learn-tab .splitter-h .splitter-handle-bar {
+    width: 40px;
+    height: 3px;
+  }
+  .learn-tab .splitter-first,
+  .learn-tab .splitter-second {
+    width: 100% !important;
+    height: auto !important;
+  }
+  .learn-sidebar {
+    max-height: 35vh;
+    overflow-y: auto;
   }
 
   /* I/O tab: 2-column down from auto-fill */
@@ -1847,12 +1986,6 @@ pre, code, textarea, .code-editor, .terminal-output, .kernel-log,
   /* ISA reference: tighter grid */
   .reference-instruction {
     grid-template-columns: 80px 1fr 1fr;
-  }
-
-  /* Learn sidebar: narrower */
-  .learn-sidebar {
-    width: 220px;
-    min-width: 180px;
   }
 
   /* Disassembly: smaller font */
@@ -1924,11 +2057,14 @@ pre, code, textarea, .code-editor, .terminal-output, .kernel-log,
     padding: 10px;
   }
 
-  /* Debugger: full-height stacking for mobile with scroll */
-  .debugger-tab {
-    grid-template-rows: auto auto auto;
-    gap: 8px;
-    height: auto;
+  /* Debugger: stacking for mobile with scroll */
+  .debugger-tab .splitter-handle {
+    display: none;
+  }
+  .debugger-tab .splitter-first,
+  .debugger-tab .splitter-second {
+    width: 100% !important;
+    height: auto !important;
   }
   .editor-section {
     min-height: 250px;
@@ -1996,13 +2132,16 @@ pre, code, textarea, .code-editor, .terminal-output, .kernel-log,
     margin-top: 2px;
   }
 
-  /* Learn tab: stack sidebar on top */
-  .learn-tab {
-    flex-direction: column;
+  /* Learn tab: hide splitter on mobile, stack */
+  .learn-tab .splitter-handle {
+    display: none;
+  }
+  .learn-tab .splitter-first,
+  .learn-tab .splitter-second {
+    width: 100% !important;
+    height: auto !important;
   }
   .learn-sidebar {
-    width: 100%;
-    min-width: 0;
     max-height: 200px;
     border-right: none;
     border-bottom: 1px solid var(--border);
@@ -2556,13 +2695,12 @@ pre, code, textarea, .code-editor, .terminal-output, .kernel-log,
    ================================================================ */
 
 .learn-tab {
-  display: flex;
   height: 100%;
+  padding: 0;
 }
 
 .learn-sidebar {
-  width: 260px;
-  min-width: 200px;
+  width: 100%;
   background: var(--bg-surface);
   border-right: 1px solid var(--border);
   overflow-y: auto;

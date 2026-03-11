@@ -9,6 +9,7 @@ import { EXAMPLES, CATEGORY_LABELS, getExamplesByCategory, type ExampleProgram }
 import { createHighlightedEditor } from '../syntax-highlight.ts';
 import { loadProfile, awardExampleXP } from '../../learning/progress.ts';
 import { showXPNotification } from '../xp-notification.ts';
+import { createSplitter } from '../splitter.ts';
 
 export function createDebuggerTab(sim: Simulator): { element: HTMLElement; update: () => void } {
   const container = el('div', { className: 'tab-content debugger-tab' });
@@ -181,9 +182,23 @@ export function createDebuggerTab(sim: Simulator): { element: HTMLElement; updat
   bpSection.appendChild(bpInput);
   bpSection.appendChild(bpList);
 
-  container.appendChild(editorSection);
-  container.appendChild(disasmSection);
-  container.appendChild(bpSection);
+  // Right side: disassembly + breakpoints stacked
+  const rightPane = el('div', { className: 'debugger-right' });
+  rightPane.appendChild(disasmSection);
+  rightPane.appendChild(bpSection);
+
+  // Use splitter: editor on left, disasm+bp on right
+  const splitter = createSplitter({
+    id: 'debugger-main',
+    direction: 'horizontal',
+    defaultSize: 50,
+    minFirst: 250,
+    minSecond: 200,
+    first: editorSection,
+    second: rightPane,
+  });
+
+  container.appendChild(splitter);
 
   function update() {
     // Update disassembly around PC
