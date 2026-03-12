@@ -1,6 +1,8 @@
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
-import { hash, verify } from '@node-rs/bcrypt';
-import { createHash, randomBytes } from 'node:crypto';
+import { scrypt, randomBytes, timingSafeEqual, createHash } from 'node:crypto';
+import { promisify } from 'node:util';
+
+const scryptAsync = promisify(scrypt);
 
 // ── Configuration ────────────────────────────────────────────────────────────
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'dev-secret-change-me');
@@ -12,13 +14,18 @@ export interface TokenPayload extends JWTPayload {
   email: string;
 }
 
-// ── Password hashing ─────────────────────────────────────────────────────────
+// ── Password hashing (Node.js built-in scrypt, no native addons) ─────────────
 export async function hashPassword(password: string): Promise<string> {
-  return hash(password, 12);
+  const salt = randomBytes(16).toString('hex');
+  const derivedKey = (await scryptAsync(password, salt, 64)) as Buffer;
+  return salt + ':' + derivedKey.toString('hex');
 }
 
 export async function verifyPassword(password: string, hashed: string): Promise<boolean> {
-  return verify(password, hashed);
+  const [salt, key] = hashed.split(':');
+  if (!salt || !key) return false;
+  const derivedKey = (await scryptAsync(password, salt, 64)) as Buffer;
+  return timingSafeEqual(Buffer.from(key, 'hex'), derivedKey);
 }
 
 // ── JWT access tokens ────────────────────────────────────────────────────────
