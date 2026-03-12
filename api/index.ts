@@ -1,7 +1,7 @@
 import { Hono, type Context } from 'hono';
 import { handle } from 'hono/vercel';
 import { cors } from 'hono/cors';
-import { eq } from 'drizzle-orm';
+import { eq, sql as rawSql } from 'drizzle-orm';
 import { db } from '../src/db/index';
 import {
   users,
@@ -34,7 +34,20 @@ app.use(
 );
 
 // ── Health check ─────────────────────────────────────────────────────────────
-app.get('/health', (c) => c.json({ ok: true }));
+app.get('/health', async (c) => {
+  const envCheck = {
+    DATABASE_URL: !!process.env.DATABASE_URL,
+    POSTGRES_URL: !!process.env.POSTGRES_URL,
+    JWT_SECRET: !!process.env.JWT_SECRET,
+    APP_URL: !!process.env.APP_URL,
+  };
+  try {
+    await db.execute(rawSql`SELECT 1`);
+    return c.json({ ok: true, env: envCheck, db: 'connected' });
+  } catch (e: any) {
+    return c.json({ ok: false, env: envCheck, db: e.message }, 500);
+  }
+});
 
 // ── Auth: Register ───────────────────────────────────────────────────────────
 app.post('/auth/register', async (c) => {
