@@ -213,7 +213,9 @@ app.get('/health', async (c) => {
   };
   try {
     await db.execute(rawSql`SELECT 1`);
-    return c.json({ ok: true, env: envCheck, db: 'connected' });
+    // Check if tables exist
+    const tables = await db.execute(rawSql`SELECT tablename FROM pg_tables WHERE schemaname = 'public'`);
+    return c.json({ ok: true, env: envCheck, db: 'connected', tables });
   } catch (e: any) {
     return c.json({ ok: false, env: envCheck, db: e.message }, 500);
   }
