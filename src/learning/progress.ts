@@ -335,6 +335,8 @@ export function loadProfile(): LearnerProfile {
 export function saveProfile(profile: LearnerProfile): void {
   try {
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    // Notify sync layer (if auth is active)
+    window.dispatchEvent(new CustomEvent('cpu-sim-data-changed'));
   } catch {
     // Silently fail
   }

@@ -16,6 +16,9 @@ import { createLearningTab } from './ui/tabs/learning.ts';
 import { CPUState } from './core/cpu.ts';
 import { tooltip } from './ui/tooltip.ts';
 import { showOnboarding } from './ui/onboarding.ts';
+import { createUserMenu } from './ui/auth/user-menu.ts';
+import { restoreSession, handleOAuthCallback } from './ui/auth/auth-state.ts';
+import { initSync } from './ui/auth/sync.ts';
 
 // ── Create Simulator ─────────────────────────────────────────────
 
@@ -68,6 +71,7 @@ const header = el('header', { className: 'app-header', children: [
     el('span', { className: 'app-subtitle', text: 'ARM-like 32-bit | 32KB RAM | 4MB Storage' }),
   ]}),
   el('div', { className: 'header-right', id: 'header-controls', children: [
+    createUserMenu(),
     themeBtn,
   ]}),
 ]});
@@ -332,3 +336,9 @@ document.addEventListener('keydown', (e) => {
 
 // ── Show onboarding on first visit ──────────────────────────────
 showOnboarding();
+
+// ── Restore auth session (non-blocking) ─────────────────────────
+handleOAuthCallback(); // grab tokens from URL hash if returning from OAuth
+restoreSession()
+  .then(() => initSync())
+  .catch(() => { /* ignore — user stays logged out */ });

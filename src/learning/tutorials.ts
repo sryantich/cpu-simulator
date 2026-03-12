@@ -1937,6 +1937,8 @@ export function saveProgress(progress: TutorialProgress): void {
       exerciseAttempts: [...progress.exerciseAttempts],
     };
     localStorage.setItem(PROGRESS_KEY, JSON.stringify(data));
+    // Notify sync layer (if auth is active)
+    window.dispatchEvent(new CustomEvent('cpu-sim-data-changed'));
   } catch {
     // Silently fail if localStorage is unavailable
   }
