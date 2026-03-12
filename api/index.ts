@@ -186,6 +186,12 @@ async function requireAuth(c: Context, next: Next) {
 
 const app = new Hono().basePath('/api');
 
+// ── Global error handler (returns details in dev/debug) ──────────────────────
+app.onError((err, c) => {
+  console.error('Unhandled error:', err);
+  return c.json({ error: err.message, stack: err.stack?.split('\n').slice(0, 5) }, 500);
+});
+
 // ── CORS ─────────────────────────────────────────────────────────────────────
 app.use(
   '*',
