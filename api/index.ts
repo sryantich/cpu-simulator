@@ -186,10 +186,10 @@ async function requireAuth(c: Context, next: Next) {
 
 const app = new Hono().basePath('/api');
 
-// ── Global error handler (returns details in dev/debug) ──────────────────────
+// ── Global error handler ─────────────────────────────────────────────────────
 app.onError((err, c) => {
   console.error('Unhandled error:', err);
-  return c.json({ error: err.message, stack: err.stack?.split('\n').slice(0, 5) }, 500);
+  return c.json({ error: 'Internal server error' }, 500);
 });
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
@@ -205,19 +205,11 @@ app.use(
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', async (c) => {
-  const envCheck = {
-    DATABASE_URL: !!process.env.DATABASE_URL,
-    POSTGRES_URL: !!process.env.POSTGRES_URL,
-    JWT_SECRET: !!process.env.JWT_SECRET,
-    APP_URL: !!process.env.APP_URL,
-  };
   try {
     await db.execute(rawSql`SELECT 1`);
-    // Check if tables exist
-    const tables = await db.execute(rawSql`SELECT tablename FROM pg_tables WHERE schemaname = 'public'`);
-    return c.json({ ok: true, env: envCheck, db: 'connected', tables });
-  } catch (e: any) {
-    return c.json({ ok: false, env: envCheck, db: e.message }, 500);
+    return c.json({ ok: true, db: 'connected' });
+  } catch {
+    return c.json({ ok: false, db: 'unreachable' }, 500);
   }
 });
 

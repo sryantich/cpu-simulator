@@ -49,6 +49,8 @@ export const LEVELS: { level: number; title: string; xpRequired: number }[] = [
   { level: 10, title: 'Syscall Sage',       xpRequired: 2300 },
   { level: 11, title: 'Kernel Hacker',      xpRequired: 2900 },
   { level: 12, title: 'OS Architect',       xpRequired: 3600 },
+  { level: 13, title: 'Boot Engineer',      xpRequired: 4500 },
+  { level: 14, title: 'System Builder',     xpRequired: 5500 },
 ];
 
 // ── Badges ───────────────────────────────────────────────────────
@@ -108,6 +110,17 @@ export const BADGES: Badge[] = [
       return kernelIds.every(id => p.completedTutorials.includes(id));
     },
   },
+  {
+    id: 'os-builder',
+    name: 'OS Builder',
+    description: 'Complete all OS Builder Challenge tutorials',
+    icon: '\u{1F680}',  // rocket
+    category: 'tutorial',
+    check: (p) => {
+      const osIds = ['boot-process', 'building-ivt', 'kernel-services', 'mini-os'];
+      return osIds.every(id => p.completedTutorials.includes(id));
+    },
+  },
 
   // ── Exercise milestones ────────────────────────────────────────
   {
@@ -133,6 +146,14 @@ export const BADGES: Badge[] = [
     icon: '\u{1F525}',  // fire
     category: 'exercise',
     check: (p) => p.exercisesPassed >= 10,
+  },
+  {
+    id: 'twenty-exercises',
+    name: 'Exercise Machine',
+    description: 'Pass 20 exercises',
+    icon: '\u{1F3CB}',  // weight lifter
+    category: 'exercise',
+    check: (p) => p.exercisesPassed >= 20,
   },
   {
     id: 'perfect-exercise',
@@ -167,6 +188,14 @@ export const BADGES: Badge[] = [
     icon: '\u{26A1}',   // lightning
     category: 'quiz',
     check: (p) => p.quizStreak >= 3,
+  },
+  {
+    id: 'ten-quizzes',
+    name: 'Quiz Master',
+    description: 'Answer 10 quiz questions correctly',
+    icon: '\u{1F3C6}',  // trophy
+    category: 'quiz',
+    check: (p) => p.quizCorrect >= 10,
   },
 
   // ── Exploration badges ─────────────────────────────────────────
@@ -207,10 +236,18 @@ export const BADGES: Badge[] = [
   {
     id: 'os-architect',
     name: 'OS Architect',
-    description: 'Reach the maximum level',
+    description: 'Reach level 12',
     icon: '\u{1F3C6}',  // trophy
     category: 'mastery',
     check: (p) => getLevel(p.totalXP).level >= 12,
+  },
+  {
+    id: 'system-builder',
+    name: 'System Builder',
+    description: 'Reach the maximum level — master of all systems',
+    icon: '\u{1F310}',  // globe with meridians
+    category: 'mastery',
+    check: (p) => getLevel(p.totalXP).level >= 14,
   },
 ];
 
@@ -251,6 +288,14 @@ export const TRACKS: LearningTrack[] = [
     icon: '\u{1F9E9}',   // puzzle
     tutorialIds: ['interrupts-exceptions', 'syscalls-deep', 'process-scheduling', 'memory-management'],
     prerequisiteTrackId: 'intermediate',
+  },
+  {
+    id: 'os-builder',
+    name: 'OS Builder Challenge',
+    description: 'The final frontier: boot sequences, interrupt vector tables, kernel services, and building a complete mini OS from scratch.',
+    icon: '\u{1F680}',   // rocket
+    tutorialIds: ['boot-process', 'building-ivt', 'kernel-services', 'mini-os'],
+    prerequisiteTrackId: 'kernel',
   },
 ];
 
